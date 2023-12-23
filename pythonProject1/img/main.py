@@ -14,7 +14,7 @@ screen_width = 900
 screen_height = 800
 
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("The Lost Tortoise")
+pygame.display.set_caption("The Lost Tortoise :)")
 
 #define font
 font = pygame.font.SysFont('Bauhaus 93', 70)
