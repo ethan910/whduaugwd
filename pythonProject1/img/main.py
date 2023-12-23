@@ -1,6 +1,6 @@
 import pygame
 import pickle
-
+from os import path
 
 
 
@@ -25,6 +25,8 @@ tile_size = 50
 game_over = 0
 main_menu = True
 score = 0
+level = 1
+max_levels = 1
 
 #define color
 white = (255, 255, 255)
@@ -45,7 +47,19 @@ def draw_grid():
 def draw_text (text, font,  text_col, x , y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
+def reset_level(level):
+	player.reset(100, screen_height - 130)
+	blob_group.empty()
+	lava_group.empty()
+	exit_group.empty()
 
+	#load in level data and create world
+	if path.exists(f'level{level}_data'):
+		pickle_in = open(f'level{level}_data', 'rb')
+		world_data = pickle.load(pickle_in)
+	world = World(world_data)
+
+	return world
 class Button():
     def __init__(self, x, y, image):
         self.image = image
@@ -92,11 +106,11 @@ class Player():
             if key[pygame.K_SPACE] == False :
                self.jumped = False
             if key[pygame.K_a]:
-               dx -= 2.51
+               dx -= 3
                self.counter += 1
                self.direction = -1
             if key[pygame.K_d]:
-               dx += 2.5
+               dx += 3
                self.counter += 1
                self.direction = 1
             if key[pygame.K_a] == False and key[pygame.K_d] == False:
@@ -353,8 +367,9 @@ score_coin = Coin(tile_size // 2, tile_size // 2)
 coin_group.add(score_coin)
 
 #load in level data and create world\
-pickle_in = open('level1_data', 'rb')
-world_data = pickle.load(pickle_in)
+if path.exists(f'level{level}_data'):
+    pickle_in = open(f'level{level}_data', 'rb')
+    world_data = pickle.load(pickle_in)
 world = World(world_data)
 
 #buttons
@@ -417,10 +432,16 @@ while run:
 
 
 
-        #if player has collected the level
+        #if player has completed the level
         if game_over == 1 and score == 10:
-            draw_text("Nice You Completed The Level!", font, blue, (screen_width // 2) - 140, screen_height // 2)
-            game_over = 0
+            level += 1
+            if level <= max_levels:
+                #draw_text("Nice You Completed The Level!", font, blue, (screen_width // 2) - 140, screen_height // 2)
+                world_data = []
+                world = reset_level(level)
+                game_over = 0
+            else:
+                pass
             if exit_button.draw():
                 run = False
         elif game_over == 1 and score < 10:
