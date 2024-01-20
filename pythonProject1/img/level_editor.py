@@ -32,6 +32,8 @@ coin_img = pygame.image.load('../../../img/coin.png')
 exit_img = pygame.image.load('../../../img/exit.png')
 save_img = pygame.image.load('../../../img/save_btn.png')
 load_img = pygame.image.load('../../../img/load_btn.png')
+deathcoin_img = pygame.image.load('meat.png')
+opposum_img = pygame.image.load('opposum.png')
 
 
 #define game variables
@@ -110,7 +112,14 @@ def draw_world():
 					#exit
 					img = pygame.transform.scale(exit_img, (tile_size, int(tile_size * 1.5)))
 					screen.blit(img, (col * tile_size, row * tile_size - (tile_size // 2)))
-
+				if world_data[row][col] == 9:
+					#deathcoin
+					img = pygame.transform.scale(deathcoin_img, (tile_size // 2, tile_size // 2))
+					screen.blit(img, (col * tile_size + (tile_size // 4), row * tile_size + (tile_size // 4)))
+				if world_data[row][col] == 10:
+					#enemy blocks
+					img = pygame.transform.scale(opposum_img, (tile_size * 2, int(tile_size * 0.65)))
+					screen.blit(img, (col * tile_size + (tile_size // -2), row * tile_size + (tile_size * 0.35)))
 
 
 
@@ -166,7 +175,7 @@ while run:
 				#update tile value
 				if pygame.mouse.get_pressed()[0] == 1:
 					world_data[y][x] += 1
-					if world_data[y][x] > 8:
+					if world_data[y][x] > 10:
 						world_data[y][x] = 0
 				elif pygame.mouse.get_pressed()[2] == 1:
 					world_data[y][x] -= 1
