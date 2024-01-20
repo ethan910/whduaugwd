@@ -171,6 +171,8 @@ class Player():
             #check for collision with exit
             if pygame.sprite.spritecollide(self, exit_group, False):
                 game_over = 1
+            if pygame.sprite.spritecollide(self, deathcoin_group, False):
+                game_over = -1
 
             #check for collision with platform
             for platform in platform_group:
@@ -275,6 +277,9 @@ class World():
                 if tile == 8:
                     exit = Exit(col_count * tile_size, row_count * tile_size - (tile_size // 2))
                     exit_group.add(exit)
+                if tile == 9:
+                    deathcoin = DeathCoin(col_count * tile_size + (tile_size // 2), row_count * tile_size + (tile_size // 2))
+                    deathcoin_group.add(deathcoin)
                 col_count += 1
             row_count += 1
 
@@ -287,6 +292,7 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("blob.png")
+        self.move_direction = 1
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -303,6 +309,11 @@ class Enemy(pygame.sprite.Sprite):
             self.move_direction *= -1
             self.move_counter *= -1
 
+        if self.move_direction == 1:
+            self.image = pygame.image.load("blob.png")
+        if self.move_direction == -1:
+            self.image = pygame.image.load("blobflipped.png")
+
 class Lava(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -316,6 +327,13 @@ class Coin(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         img = pygame.image.load("coin.png")
+        self.image = pygame.transform.scale(img, (tile_size // 2, tile_size // 2))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+class DeathCoin(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        img = pygame.image.load("meat.png")
         self.image = pygame.transform.scale(img, (tile_size // 2, tile_size // 2))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
@@ -361,6 +379,7 @@ platform_group = pygame.sprite.Group()
 lava_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
+deathcoin_group = pygame.sprite.Group()
 
 #create dummy coin for chowing the score
 score_coin = Coin(tile_size // 2, tile_size // 2)
@@ -403,6 +422,8 @@ while run:
              #check if a coin has been collected
              if pygame.sprite.spritecollide(player,  coin_group, True):
                 score += 1
+             if pygame.sprite.spritecollide(player, deathcoin_group, True):
+                 game_over = -1
              draw_text('X ' + str(score), font_score, white, tile_size - 10, 10)
 
         blob_group.draw(screen)
@@ -410,6 +431,7 @@ while run:
         platform_group.draw(screen)
         exit_group.draw(screen)
         coin_group.draw(screen)
+        deathcoin_group.draw(screen)
         draw_grid()
         game_over = player.update(game_over)
 
@@ -417,8 +439,6 @@ while run:
 
         #if player died
         if game_over == -1:
-            if exit_button.draw():
-                run = False
             if restart_button.draw():
 
                 player.reset(100, screen_height - 130)
@@ -429,7 +449,11 @@ while run:
                 world = World(world_data)
                 game_over = 0
                 score = 0
-
+            else:
+                if restart_button.draw():
+                    world_data = []
+                    world = reset_level(level)
+                    game_over = 0
 
 
         #if player has completed the level
