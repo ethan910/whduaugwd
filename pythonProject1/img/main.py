@@ -58,20 +58,27 @@ def draw_grid():
 def draw_text (text, font,  text_col, x , y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
+
+
 def reset_level(level):
-	player.reset(100, screen_height - 130)
-	blob_group.empty()
-	lava_group.empty()
-	exit_group.empty()
+    player.reset(100, screen_height - 130)
+    blob_group.empty()
+    lava_group.empty()
+    exit_group.empty()
+    opposum_group.empty()
+    platform_group.empty()
+
+    # load in level data and create world
+    if path.exists(f'level{level}_data'):
+        pickle_in = open(f'level{level}_data', 'rb')
+        world_data = pickle.load(pickle_in)
+    world = World(world_data)
+
+    return world
 
 
-	#load in level data and create world
-	if path.exists(f'level{level}_data'):
-		pickle_in = open(f'level{level}_data', 'rb')
-		world_data = pickle.load(pickle_in)
-	world = World(world_data)
 
-	return world
+
 class Button():
     def __init__(self, x, y, image):
         self.image = image
