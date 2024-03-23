@@ -1,7 +1,7 @@
 import pygame
 import pickle
 from os import path
-
+import random
 
 
 pygame.init()
@@ -14,7 +14,7 @@ screen_width = 900
 screen_height = 800
 
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("The Lost Tortoise ")
+pygame.display.set_caption("we do a little gaming")
 
 #define font
 font = pygame.font.SysFont('Bauhaus 93', 70)
@@ -26,7 +26,9 @@ game_over = 0
 main_menu = True
 score = 0
 level = 1
-max_levels = 1
+max_levels = 2
+list1 = [1, -1]
+list2 = [4, -4]
 
 #define color
 white = (255, 255, 255)
@@ -34,15 +36,24 @@ blue = (0, 0, 255)
 #load images
 
 bg_img = pygame.image.load("sky.png")
-restart_img = pygame.image.load("restart_btn.png")
-start_img = pygame.image.load("start_btn.png")
-exit_img = pygame.image.load("exit_btn.png")
+resa = pygame.image.load("restart_btn.png")
+restart_img = pygame.transform.scale(resa,(300,175))
+stards =  pygame.image.load("start_btn.png")
+start_img = pygame.transform.scale(stards,(300,175))
+esaxsa = pygame.image.load("exit_btn.png")
+exit_img = pygame.transform.scale(esaxsa,(300,175))
+sign = pygame.image.load("sign.png")
+sign2 = pygame.transform.scale(sign,(700,1400))
 
 #draw grid for backgrounds
+
 def draw_grid():
     for line in range(0, 36):
         pygame.draw.line(screen, (255, 255, 255), (0,line * tile_size), (screen_width, line * tile_size))
         pygame.draw.line(screen, (255, 255, 255), (line * tile_size, 0),(line * tile_size, screen_height))
+        pygame.draw.rect(screen, (255, 255, 255), player.rect, 2)
+
+
 
 def draw_text (text, font,  text_col, x , y):
     img = font.render(text, True, text_col)
@@ -52,6 +63,7 @@ def reset_level(level):
 	blob_group.empty()
 	lava_group.empty()
 	exit_group.empty()
+
 
 	#load in level data and create world
 	if path.exists(f'level{level}_data'):
@@ -165,6 +177,8 @@ class Player():
             #check for collision with enemies
             if pygame.sprite.spritecollide(self, blob_group, False):
                 game_over = -1
+            if pygame.sprite.spritecollide(self, opposum_group, False):
+                game_over = -1
             #check for collision with lava
             if pygame.sprite.spritecollide(self, lava_group, False):
                 game_over = -1
@@ -206,8 +220,7 @@ class Player():
 
         #draw player onto screen
         screen.blit(self.image, self.rect)
-        #hitbox for player
-        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2)
+
 
         return game_over
 
@@ -280,6 +293,9 @@ class World():
                 if tile == 9:
                     deathcoin = DeathCoin(col_count * tile_size + (tile_size // 2), row_count * tile_size + (tile_size // 2))
                     deathcoin_group.add(deathcoin)
+                if tile == 10:
+                    opposum = Enemy2(col_count * tile_size, row_count * tile_size + (tile_size // 2 + 6))
+                    opposum_group.add(opposum)
                 col_count += 1
             row_count += 1
 
@@ -292,17 +308,16 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("blob.png")
-        self.move_direction = 1
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.move_direction = 1
+        self.move_direction = random.choice(list1)
         self.move_counter = 0
 
 
     def update(self):
-        #enemy border
-        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2)
+        if pygame.key.get_pressed()[pygame.K_h]:
+            pygame.draw.rect(screen, (255, 255, 255), self.rect, 2)
         self.rect.x += self.move_direction
         self.move_counter += 1
         if abs(self.move_counter) > 50:
@@ -313,7 +328,29 @@ class Enemy(pygame.sprite.Sprite):
             self.image = pygame.image.load("blob.png")
         if self.move_direction == -1:
             self.image = pygame.image.load("blobflipped.png")
+class Enemy2(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("opposumflipped.png")
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.move_direction = random.choice(list2)
+        self.move_counter = 0
 
+    def update(self):
+        if pygame.key.get_pressed()[pygame.K_h]:
+            pygame.draw.rect(screen, (255, 255, 255), self.rect, 2)
+        self.rect.x += self.move_direction
+        self.move_counter += 1
+        if abs(self.move_counter) > 40:
+            self.move_direction *= -1
+            self.move_counter *= -1
+
+        if self.move_direction == 4:
+            self.image = pygame.image.load("opposumflipped.png")
+        if self.move_direction == -4:
+            self.image = pygame.image.load("opposum.png")
 class Lava(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -380,6 +417,8 @@ lava_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
 deathcoin_group = pygame.sprite.Group()
+opposum_group = pygame.sprite.Group()
+
 
 #create dummy coin for chowing the score
 score_coin = Coin(tile_size // 2, tile_size // 2)
@@ -392,9 +431,9 @@ if path.exists(f'level{level}_data'):
 world = World(world_data)
 
 #buttons
-restart_button = Button(screen_width // 2 - 50, screen_height // 2 + 100, restart_img)
+restart_button = Button(screen_width // 2 - 350, screen_height // 1.5,  restart_img)
 start_button = Button(screen_width // 2 - 350, screen_height // 1.5,  start_img)
-exit_button = Button(screen_width // 2 + 150, screen_height // 1.5,  exit_img)
+exit_button = Button(screen_width // 2 + 50, screen_height // 1.5,  exit_img)
 
 run = True
 while run:
@@ -407,16 +446,19 @@ while run:
 
 
     if main_menu == True:
+        screen.blit(sign2, (100,-370))
         if exit_button.draw():
             run = False
         if start_button.draw():
             main_menu = False
+
     else:
         world.draw()
 
         if game_over == 0:
              blob_group.update()
              platform_group.update()
+             opposum_group.update()
 
              #update score
              #check if a coin has been collected
@@ -432,8 +474,12 @@ while run:
         exit_group.draw(screen)
         coin_group.draw(screen)
         deathcoin_group.draw(screen)
-        draw_grid()
+        opposum_group.draw(screen)
         game_over = player.update(game_over)
+
+        if pygame.key.get_pressed()[pygame.K_h]:
+             draw_grid()
+
 
 
 
@@ -446,6 +492,7 @@ while run:
                 lava_group.empty()
                 exit_group.empty()
                 platform_group.empty()
+                opposum_group.empty()
                 world = World(world_data)
                 game_over = 0
                 score = 0
@@ -454,7 +501,8 @@ while run:
                     world_data = []
                     world = reset_level(level)
                     game_over = 0
-
+            if exit_button.draw():
+                run = False
 
         #if player has completed the level
         if game_over == 1 and score == 10:
