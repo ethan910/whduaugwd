@@ -25,8 +25,8 @@ tile_size = 50
 game_over = 0
 main_menu = True
 score = 0
-level = 1
-max_levels = 2
+level = 3
+max_levels = 3
 list1 = [1, -1]
 list2 = [4, -4]
 
@@ -67,7 +67,8 @@ def reset_level(level):
     exit_group.empty()
     opposum_group.empty()
     platform_group.empty()
-
+    coin_group.empty()
+    deathcoin_group.empty()
     # load in level data and create world
     if path.exists(f'level{level}_data'):
         pickle_in = open(f'level{level}_data', 'rb')
@@ -489,7 +490,6 @@ while run:
 
 
 
-
         #if player died
         if game_over == -1:
             if restart_button.draw():
@@ -500,14 +500,19 @@ while run:
                 exit_group.empty()
                 platform_group.empty()
                 opposum_group.empty()
-                world = World(world_data)
+                level = 1
+                world = reset_level(level)
                 game_over = 0
                 score = 0
+
             else:
                 if restart_button.draw():
-                    world_data = []
+                    blob_group.empty()
+                    lava_group.empty()
+                    exit_group.empty()
+                    platform_group.empty()
+                    opposum_group.empty()
                     world = reset_level(level)
-                    game_over = 0
             if exit_button.draw():
                 run = False
 
