@@ -34,6 +34,7 @@ exit_img = pygame.image.load('exit.png')
 #load_img = pygame.image.load('load_btn.png')
 deathcoin_img = pygame.image.load('meat.png')
 opposum_img = pygame.image.load('opposum.png')
+stone_img = pygame.image.load('stone.png')
 
 
 #define game variables
@@ -120,7 +121,10 @@ def draw_world():
 					#enemy blocks
 					img = pygame.transform.scale(opposum_img, (tile_size * 2, int(tile_size * 0.65)))
 					screen.blit(img, (col * tile_size + (tile_size // -2), row * tile_size + (tile_size * 0.35)))
-
+				if world_data[row][col] == 11:
+					#stone blocks
+					img = pygame.transform.scale(stone_img, (tile_size, tile_size))
+					screen.blit(img, (col * tile_size, row * tile_size))
 
 
 #create load and save buttons
@@ -175,12 +179,12 @@ while run:
 				#update tile value
 				if pygame.mouse.get_pressed()[0] == 1:
 					world_data[y][x] += 1
-					if world_data[y][x] > 10:
+					if world_data[y][x] > 11:
 						world_data[y][x] = 0
 				elif pygame.mouse.get_pressed()[2] == 1:
 					world_data[y][x] -= 1
 					if world_data[y][x] < 0:
-						world_data[y][x] = 10
+						world_data[y][x] = 11
 		if event.type == pygame.MOUSEBUTTONUP:
 			clicked = False
 		#up and down key presses to change level number

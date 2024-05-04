@@ -2,7 +2,7 @@ import pygame
 import pickle
 from os import path
 import random
-
+import webbrowser
 
 pygame.init()
 
@@ -25,7 +25,7 @@ tile_size = 50
 game_over = 0
 main_menu = True
 score = 0
-level = 3
+level = 2
 max_levels = 3
 list1 = [1, -1]
 list2 = [4, -4]
@@ -181,7 +181,6 @@ class Player():
 
 
 
-
             #check for collision with enemies
             if pygame.sprite.spritecollide(self, blob_group, False):
                 game_over = -1
@@ -260,6 +259,7 @@ class World():
         self.tile_list = []
 
         dirt_img = pygame.image.load("dirt.png")
+        stone_img = pygame.image.load("stone.png")
         grass_img = pygame.image.load("grass.png")
 
         row_count = 0
@@ -304,6 +304,13 @@ class World():
                 if tile == 10:
                     opposum = Enemy2(col_count * tile_size, row_count * tile_size + (tile_size // 2 + 6))
                     opposum_group.add(opposum)
+                if tile == 11:
+                    img = pygame.transform.scale(stone_img, (tile_size, tile_size))
+                    img_rect = img.get_rect()
+                    img_rect.x = col_count * tile_size
+                    img_rect.y = row_count * tile_size
+                    tile = (img , img_rect)
+                    self.tile_list.append(tile)
                 col_count += 1
             row_count += 1
 
@@ -474,7 +481,7 @@ while run:
                 score += 1
              if pygame.sprite.spritecollide(player, deathcoin_group, True):
                  game_over = -1
-             draw_text('X ' + str(score), font_score, white, tile_size - 10, 10)
+             draw_text('X ' + str(score) + '/10', font_score, white, tile_size - 10, 4)
 
         blob_group.draw(screen)
         lava_group.draw(screen)
@@ -488,12 +495,11 @@ while run:
         if pygame.key.get_pressed()[pygame.K_h]:
              draw_grid()
 
-
-
+        if pygame.key.get_pressed()[pygame.K_0]:
+            webbrowser.open(r"https://forms.gle/91uxK71iz3VmFmdM7")
         #if player died
         if game_over == -1:
             if restart_button.draw():
-
                 player.reset(100, screen_height - 130)
                 blob_group.empty()
                 lava_group.empty()
@@ -504,6 +510,7 @@ while run:
                 world = reset_level(level)
                 game_over = 0
                 score = 0
+                coin_group.add(score_coin)
 
             else:
                 if restart_button.draw():
@@ -513,6 +520,8 @@ while run:
                     platform_group.empty()
                     opposum_group.empty()
                     world = reset_level(level)
+                    score = 0
+                    coin_group.add(score_coin)
             if exit_button.draw():
                 run = False
 
@@ -523,7 +532,9 @@ while run:
                 #draw_text("Nice You Completed The Level!", font, blue, (screen_width // 2) - 140, screen_height // 2)
                 world_data = []
                 world = reset_level(level)
+                score = 0
                 game_over = 0
+                coin_group.add(score_coin)
             else:
                 pass
             if exit_button.draw():
