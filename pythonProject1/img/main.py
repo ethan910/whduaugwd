@@ -1,11 +1,14 @@
+import os
+
 import pygame
 import pickle
 from os import path
 import random
 import webbrowser
 
-pygame.init()
 
+pygame.init()
+pygame.mixer.init()
 
 clock = pygame.time.Clock()
 fps = 60
@@ -25,10 +28,14 @@ tile_size = 50
 game_over = 0
 main_menu = True
 score = 0
-level = 2
+level = 1
 max_levels = 3
 list1 = [1, -1]
 list2 = [4, -4]
+jump = pygame.mixer.Sound('untitled.wav')
+eat = pygame.mixer.Sound('eat.wav')
+level_done = pygame.mixer.Sound('level_done.wav')
+losing_sound = pygame.mixer.Sound('losing_sound.wav')
 
 #define color
 white = (255, 255, 255)
@@ -123,6 +130,7 @@ class Player():
             if key[pygame.K_SPACE] and self.jumped == False and self.in_air == False:
                self.vel_y = -15
                self.jumped = True
+               jump.play()
             if key[pygame.K_SPACE] == False :
                self.jumped = False
             if key[pygame.K_a]:
@@ -479,6 +487,7 @@ while run:
              #check if a coin has been collected
              if pygame.sprite.spritecollide(player,  coin_group, True):
                 score += 1
+                eat.play()
              if pygame.sprite.spritecollide(player, deathcoin_group, True):
                  game_over = -1
              draw_text('X ' + str(score) + '/10', font_score, white, tile_size - 10, 4)
@@ -499,6 +508,7 @@ while run:
             webbrowser.open(r"https://forms.gle/91uxK71iz3VmFmdM7")
         #if player died
         if game_over == -1:
+            losing_sound.play()
             if restart_button.draw():
                 player.reset(100, screen_height - 130)
                 blob_group.empty()
@@ -511,7 +521,6 @@ while run:
                 game_over = 0
                 score = 0
                 coin_group.add(score_coin)
-
             else:
                 if restart_button.draw():
                     blob_group.empty()
@@ -535,12 +544,14 @@ while run:
                 score = 0
                 game_over = 0
                 coin_group.add(score_coin)
+                level_done.play()
             else:
                 pass
             if exit_button.draw():
                 run = False
         elif game_over == 1 and score < 10:
             draw_text("You Died Of Starvation!", font, blue, (screen_width // 2) - 140, screen_height // 2)
+            losing_sound.play()
             if exit_button.draw():
                 run = False
 
