@@ -246,7 +246,7 @@ class Player():
        self.counter = 0
        for num in range(1, 5):
            img_right = pygame.image.load(f"guy{num}.png")
-           img_right = pygame.transform.scale(img_right, (43, 40))
+           img_right = pygame.transform.scale(img_right, (45, 33))
            img_left = pygame.transform.flip(img_right, True, False)
            self.images_right.append(img_right)
            self.images_left.append(img_left)
@@ -533,7 +533,6 @@ while run:
                     coin_group.add(score_coin)
             if exit_button.draw():
                 run = False
-
         #if player has completed the level
         if game_over == 1 and score == 10:
             level += 1
