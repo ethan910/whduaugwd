@@ -52,6 +52,7 @@ exit_img = pygame.transform.scale(esaxsa,(300,175))
 sign = pygame.image.load("sign.png")
 sign2 = pygame.transform.scale(sign,(700,1400))
 
+
 #draw grid for backgrounds
 
 def draw_grid():
