@@ -28,7 +28,7 @@ tile_size = 50
 game_over = 0
 main_menu = True
 score = 0
-level = 1
+level = 3
 max_levels = 3
 list1 = [1, -1]
 list2 = [4, -4]
@@ -51,6 +51,7 @@ esaxsa = pygame.image.load("exit_btn.png")
 exit_img = pygame.transform.scale(esaxsa,(300,175))
 sign = pygame.image.load("sign.png")
 sign2 = pygame.transform.scale(sign,(700,1400))
+
 
 
 #draw grid for backgrounds
@@ -170,6 +171,7 @@ class Player():
 
             #check for collision
             self.in_air = True
+
             for tile in world.tile_list:
                 #check for collision in x direction
                 if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
@@ -188,7 +190,17 @@ class Player():
                         self.vel_y = 0
                         self.in_air = False
 
-
+                if key[pygame.K_SPACE]:
+                    if self.in_air:
+                        if self.direction == 1:
+                            self.image = self.img_jump_right
+                        if self.direction == -1:
+                            self.image = self.img_jump_left
+                    else:
+                        if self.direction == 1:
+                            self.image = self.images_right[self.index]
+                        if self.direction == -1:
+                            self.image = self.images_left[self.index]
 
             #check for collision with enemies
             if pygame.sprite.spritecollide(self, blob_group, False):
@@ -252,6 +264,9 @@ class Player():
            self.images_right.append(img_right)
            self.images_left.append(img_left)
        self.dead_image = pygame.image.load("ghost.png")
+       img_jump = pygame.image.load("guy5.png")
+       self.img_jump_right = pygame.transform.scale(img_jump, (45, 33))
+       self.img_jump_left = pygame.transform.flip(self.img_jump_right, True, False)
        self.image = self.images_right[self.index]
        self.rect = self.image.get_rect()
        self.rect.x = x
@@ -260,7 +275,7 @@ class Player():
        self.height = self.image.get_height()
        self.vel_y = 0
        self.jumped = False
-       self.direction = 0
+       self.direction = 1
        self.in_air = True
 
 class World():
@@ -509,7 +524,7 @@ while run:
             webbrowser.open(r"https://forms.gle/91uxK71iz3VmFmdM7")
         #if player died
         if game_over == -1:
-            losing_sound.play()
+            losing_sound.play(0,0,0)
             if restart_button.draw():
                 player.reset(100, screen_height - 130)
                 blob_group.empty()
