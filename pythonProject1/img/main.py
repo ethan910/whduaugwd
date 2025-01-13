@@ -28,8 +28,8 @@ tile_size = 50
 game_over = 0
 main_menu = True
 score = 0
-level = 3
-max_levels = 3
+level = 4
+max_levels = 4
 list1 = [1, -1]
 list2 = [4, -4]
 jump = pygame.mixer.Sound('untitled.wav')
@@ -216,7 +216,29 @@ class Player():
             if pygame.sprite.spritecollide(self, deathcoin_group, False):
                 game_over = -1
 
-            #check for collision with platform
+            #check for collision with ice
+            for ice in ice_group:
+                #collision in the x direction
+                if ice.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                    dx = 0
+                #collision in the y direction
+                    # collision in the y direction
+                if ice.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                    # check if below  platform
+                    if self.vel_y < 0:
+                        self.vel_y = 0
+                        dy = ice.rect.bottom - self.rect.top
+                        self.in_air = True
+                    elif self.vel_y >= 0:
+                        self.rect.bottom = ice.rect.top - 1
+                        self.in_air = False
+                        dy = 0
+            # update player coordinates
+            self.rect.x += dx
+            self.rect.y += dy
+
+
+
             for platform in platform_group:
                 #collision in the x direction
                 if platform.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
@@ -235,7 +257,6 @@ class Player():
                     #move sideways with the platform
                     if  platform.move_x != 0:
                         self.rect.x += platform.move_direction
-
             #update player coordinates
             self.rect.x += dx
             self.rect.y += dy
@@ -335,6 +356,9 @@ class World():
                     img_rect.y = row_count * tile_size
                     tile = (img , img_rect)
                     self.tile_list.append(tile)
+                if tile == 12:
+                    ice = Ice(col_count * tile_size, row_count * tile_size)
+                    ice_group.add(ice)
                 col_count += 1
             row_count += 1
 
@@ -398,7 +422,14 @@ class Lava(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-
+class Ice(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        img = pygame.image.load("ice.png")
+        self.image = pygame.transform.scale(img, (tile_size, tile_size))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
 class Coin(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -457,6 +488,7 @@ coin_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
 deathcoin_group = pygame.sprite.Group()
 opposum_group = pygame.sprite.Group()
+ice_group = pygame.sprite.Group()
 
 
 #create dummy coin for chowing the score
@@ -515,6 +547,7 @@ while run:
         coin_group.draw(screen)
         deathcoin_group.draw(screen)
         opposum_group.draw(screen)
+        ice_group.draw(screen)
         game_over = player.update(game_over)
 
         if pygame.key.get_pressed()[pygame.K_h]:
