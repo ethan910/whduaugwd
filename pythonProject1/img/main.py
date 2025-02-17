@@ -29,7 +29,7 @@ game_over = 0
 main_menu = True
 score = 0
 level = 4
-max_levels = 4
+max_levels = 5
 list1 = [1, -1]
 list2 = [4, -4]
 jump = pygame.mixer.Sound('untitled.wav')
@@ -58,7 +58,7 @@ sign2 = pygame.transform.scale(sign,(700,1400))
 
 def draw_grid():
     for line in range(0, 36):
-        pygame.draw.line(screen, (255, 255, 255), (0,line * tile_size), (screen_width, line * tile_size))
+        pygame.draw.line(screen, (255, 255, 255), (0 ,line * tile_size), (screen_width, line * tile_size))
         pygame.draw.line(screen, (255, 255, 255), (line * tile_size, 0),(line * tile_size, screen_height))
         pygame.draw.rect(screen, (255, 255, 255), player.rect, 2)
 
@@ -78,6 +78,7 @@ def reset_level(level):
     platform_group.empty()
     coin_group.empty()
     deathcoin_group.empty()
+    ice_group.empty()
     # load in level data and create world
     if path.exists(f'level{level}_data'):
         pickle_in = open(f'level{level}_data', 'rb')
@@ -117,114 +118,132 @@ class Button():
         return action
 
 class Player():
-   def __init__(self, x, y):
+    def __init__(self, x, y):
        self.reset( x, y)
 
-   def update(self, game_over):
+    def update(self, game_over):
         dx = 0
         dy = 0
         walk_cooldown = 10
         col_thresh = 20
 
         if game_over == 0:
-            #get keypresses
+            # get keypresses
             key = pygame.key.get_pressed()
+
+            # Handle movement and ice physics
+            if self.on_ice:
+                # Apply momentum to movement
+                dx += self.momentum
+
+                # Gradually reduce momentum (sliding effect)
+                if self.momentum > 0:
+                    self.momentum = max(0, self.momentum - 0.1)
+                elif self.momentum < 0:
+                    self.momentum = min(0, self.momentum + 0.1)
+                # Movement on ice
+                if key[pygame.K_a]:
+                    self.momentum = max(self.momentum - 0.5, -5)
+                    self.counter += 1
+                    self.direction = -1
+                    print("left")
+                if key[pygame.K_d]:
+                    self.momentum = min(self.momentum + 0.5, 5)
+                    self.counter += 1
+                    self.direction = 1
+                    print("right")
+                if key[pygame.K_SPACE] and self.jumped == False and self.in_air == False:
+                    if self.direction == 1:
+                        self.vel_y = -15 - self.momentum
+                        self.jumped = True
+                        jump.play()
+                    elif self.direction == -1:
+                        self.vel_y = -15 + self.momentum
+                        self.jumped = True
+                        jump.play()
+            else:
+                # Store the last movement direction and speed when in air
+                if key[pygame.K_a]:
+                    if self.in_air:
+                        dx = -3  # Keep moving left in air
+                    else:
+                        dx = -3
+                    self.counter += 1
+                    self.direction = -1
+                elif key[pygame.K_d]:
+                    if self.in_air:
+                        dx = 3  # Keep moving right in air
+                    else:
+                        dx = 3
+                    self.counter += 1
+                    self.direction = 1
+                elif key[pygame.K_a] == False and key[pygame.K_d] == False and self.in_air:
+                    self.momentum = 0
+                else:
+                    self.last_dx = 0
+
+
+            # Jump handling
             if key[pygame.K_SPACE] and self.jumped == False and self.in_air == False:
-               self.vel_y = -15
-               self.jumped = True
-               jump.play()
-            if key[pygame.K_SPACE] == False :
-               self.jumped = False
-            if key[pygame.K_a]:
-               dx -= 3
-               self.counter += 1
-               self.direction = -1
-            if key[pygame.K_d]:
-               dx += 3
-               self.counter += 1
-               self.direction = 1
-            if key[pygame.K_a] == False and key[pygame.K_d] == False:
-               self.counter = 0
-               self.index = 0
-            if self.direction == 1:
-                self.image = self.images_right[self.index]
-            if self.direction == -1:
-                self.image = self.images_left[self.index]
+                self.vel_y = -15
+                self.jumped = True
+                self.direction = 0
+                jump.play()
+            if key[pygame.K_SPACE] == False:
+                self.jumped = False
 
-
-            #handle  animation
-            if self.counter > walk_cooldown:
+            # Handle animation
+            if key[pygame.K_a] == False and key[pygame.K_d] == False and not self.in_air:
                 self.counter = 0
-                self.index += 1
-                if self.index >= len(self.images_right):
-                     self.index = 0
+                self.index = 0
                 if self.direction == 1:
                     self.image = self.images_right[self.index]
                 if self.direction == -1:
                     self.image = self.images_left[self.index]
 
-            #add gravity
+            # Animation counter
+            if self.counter > walk_cooldown:
+                self.counter = 0
+                self.index += 1
+                if self.index >= len(self.images_right):
+                    self.index = 0
+                if self.direction == 1:
+                    self.image = self.images_right[self.index]
+                if self.direction == -1:
+                    self.image = self.images_left[self.index]
+
+            # add gravity
             self.vel_y += 1
             if self.vel_y > 10:
                 self.vel_y = 10
             dy += self.vel_y
 
-            #check for collision
+            # check for collision
             self.in_air = True
+            self.on_ice = False  # Reset ice status
 
             for tile in world.tile_list:
-                #check for collision in x direction
-                if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                # check for collision in x direction
+                if tile[1].colliderect(self.rect.x + dx + 0.5, self.rect.y, self.width, self.height):
                     dx = 0
+                    self.momentum = 0
 
-                #check or collision in y direction
+                # check for collision in y direction
                 if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
-                    #check if below the ground i.e. jumping
                     if self.vel_y < 0:
                         dy = tile[1].bottom - self.rect.top
                         self.vel_y = 0
-                        self.in_air = True
-                    # check if below the ground i.e. falling
                     elif self.vel_y >= 0:
                         dy = tile[1].top - self.rect.bottom
                         self.vel_y = 0
                         self.in_air = False
 
-                if key[pygame.K_SPACE]:
-                    if self.in_air:
-                        if self.direction == 1:
-                            self.image = self.img_jump_right
-                        if self.direction == -1:
-                            self.image = self.img_jump_left
-                    else:
-                        if self.direction == 1:
-                            self.image = self.images_right[self.index]
-                        if self.direction == -1:
-                            self.image = self.images_left[self.index]
-
-            #check for collision with enemies
-            if pygame.sprite.spritecollide(self, blob_group, False):
-                game_over = -1
-            if pygame.sprite.spritecollide(self, opposum_group, False):
-                game_over = -1
-            #check for collision with lava
-            if pygame.sprite.spritecollide(self, lava_group, False):
-                game_over = -1
-            #check for collision with exit
-            if pygame.sprite.spritecollide(self, exit_group, False):
-                game_over = 1
-            if pygame.sprite.spritecollide(self, deathcoin_group, False):
-                game_over = -1
-
-            #check for collision with ice
+            # Check for ice collision
             for ice in ice_group:
-                #collision in the x direction
                 if ice.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                    self.on_ice = True
                     dx = 0
-                #collision in the y direction
-                    # collision in the y direction
                 if ice.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
-                    # check if below  platform
                     if self.vel_y < 0:
                         self.vel_y = 0
                         dy = ice.rect.bottom - self.rect.top
@@ -233,71 +252,94 @@ class Player():
                         self.rect.bottom = ice.rect.top - 1
                         self.in_air = False
                         dy = 0
-            # update player coordinates
-            self.rect.x += dx
-            self.rect.y += dy
+                        self.on_ice = True
 
+            # Update jumping animation while maintaining movement
+            if self.in_air:
+                if self.direction == 1:
+                    self.image = self.img_jump_right
+                if self.direction == -1:
+                    self.image = self.img_jump_left
 
+            # check for collision with enemies
+            if pygame.sprite.spritecollide(self, blob_group, False):
+                game_over = -1
+            if pygame.sprite.spritecollide(self, opposum_group, False):
+                game_over = -1
+            # check for collision with lava
+            if pygame.sprite.spritecollide(self, lava_group, False):
+                game_over = -1
+            # check for collision with exit
+            if pygame.sprite.spritecollide(self, exit_group, False):
+                game_over = 1
+            if pygame.sprite.spritecollide(self, deathcoin_group, False):
+                game_over = -1
 
+            # check for collision with platforms
             for platform in platform_group:
-                #collision in the x direction
+                # collision in the x direction
                 if platform.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                     dx = 0
-                #collision in the y direction
+                # collision in the y direction
                 if platform.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
-                    #check if below  platform
+                    # check if below platform
                     if abs((self.rect.top + dy) - platform.rect.bottom) < col_thresh:
                         self.vel_y = 0
                         dy = platform.rect.bottom - self.rect.top
-                    #check if above platform
+                    # check if above platform
                     elif abs((self.rect.bottom + dy) - platform.rect.top) < col_thresh:
                         self.rect.bottom = platform.rect.top - 1
                         self.in_air = False
                         dy = 0
-                    #move sideways with the platform
-                    if  platform.move_x != 0:
+                    # move sideways with the platform
+                    if platform.move_x != 0:
                         self.rect.x += platform.move_direction
-            #update player coordinates
+
+            # update player coordinates
             self.rect.x += dx
             self.rect.y += dy
 
         elif game_over == -1:
             self.image = self.dead_image
-            draw_text('YOU  DIED!', font, blue, (screen_width // 1.7) - 200, screen_height // 2)
+            draw_text('YOU DIED!', font, blue, (screen_width // 1.7) - 200, screen_height // 2)
             if self.rect.y > 200:
                 self.rect.y -= 5
 
-        #draw player onto screen
+        # draw player onto screen
         screen.blit(self.image, self.rect)
-
 
         return game_over
 
-   def reset(self, x, y):
-       self.images_right = []
-       self.images_left = []
-       self.index = 0
-       self.counter = 0
-       for num in range(1, 5):
-           img_right = pygame.image.load(f"guy{num}.png")
-           img_right = pygame.transform.scale(img_right, (45, 33))
-           img_left = pygame.transform.flip(img_right, True, False)
-           self.images_right.append(img_right)
-           self.images_left.append(img_left)
-       self.dead_image = pygame.image.load("ghost.png")
-       img_jump = pygame.image.load("guy5.png")
-       self.img_jump_right = pygame.transform.scale(img_jump, (45, 33))
-       self.img_jump_left = pygame.transform.flip(self.img_jump_right, True, False)
-       self.image = self.images_right[self.index]
-       self.rect = self.image.get_rect()
-       self.rect.x = x
-       self.rect.y = y
-       self.width = self.image.get_width()
-       self.height = self.image.get_height()
-       self.vel_y = 0
-       self.jumped = False
-       self.direction = 1
-       self.in_air = True
+    def reset(self, x, y):
+        self.images_right = []
+        self.images_left = []
+        self.index = 0
+        self.counter = 0
+        for num in range(1, 5):
+            img_right = pygame.image.load(f"guy{num}.png")
+            img_right = pygame.transform.scale(img_right, (45, 33))
+            img_left = pygame.transform.flip(img_right, True, False)
+            self.images_right.append(img_right)
+            self.images_left.append(img_left)
+        self.dead_image = pygame.image.load("ghost.png")
+        img_jump = pygame.image.load("guy5.png")
+        self.img_jump_right = pygame.transform.scale(img_jump, (45, 33))
+        self.img_jump_left = pygame.transform.flip(self.img_jump_right, True, False)
+        self.image = self.images_right[self.index]
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.vel_y = 0
+        self.jumped = False
+        self.direction = 1
+        self.in_air = True
+        self.on_ice = False
+        self.momentum = 0
+        self.last_dx = 0
+        self.last_momentum = 0
+
 
 class World():
     def __init__(self, data):
