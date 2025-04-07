@@ -27,6 +27,7 @@ font_score = pygame.font.SysFont('Bauhaus 93', 40)
 tile_size = 50
 game_over = 0
 main_menu = True
+lose = True
 score = 0
 level = 1
 max_levels = 5
@@ -50,7 +51,7 @@ start_img = pygame.transform.scale(stards,(300,175))
 esaxsa = pygame.image.load("exit_btn.png")
 exit_img = pygame.transform.scale(esaxsa,(300,175))
 sign = pygame.image.load("sign.png")
-sign2 = pygame.transform.scale(sign,(700,1400))
+sign2 = pygame.transform.scale(sign,(775,450))
 
 
 
@@ -146,12 +147,10 @@ class Player():
                     self.momentum = max(self.momentum - 0.5, -5)
                     self.counter += 1
                     self.direction = -1
-                    print("left")
                 if key[pygame.K_d]:
                     self.momentum = min(self.momentum + 0.5, 5)
                     self.counter += 1
                     self.direction = 1
-                    print("right")
                 if key[pygame.K_SPACE] and self.jumped == False and self.in_air == False:
                     if self.direction == 1:
                         self.vel_y = -15 - self.momentum
@@ -302,7 +301,7 @@ class Player():
         elif game_over == -1:
             self.image = self.dead_image
             draw_text('YOU DIED!', font, blue, (screen_width // 1.7) - 200, screen_height // 2)
-            if self.rect.y > 200:
+            if self.rect.y > -50:
                 self.rect.y -= 5
 
         # draw player onto screen
@@ -321,7 +320,8 @@ class Player():
             img_left = pygame.transform.flip(img_right, True, False)
             self.images_right.append(img_right)
             self.images_left.append(img_left)
-        self.dead_image = pygame.image.load("ghost.png")
+        dead_image = pygame.image.load("ghost.png")
+        self.dead_image = pygame.transform.scale(dead_image, (47, 35))
         img_jump = pygame.image.load("guy5.png")
         self.img_jump_right = pygame.transform.scale(img_jump, (45, 33))
         self.img_jump_left = pygame.transform.flip(self.img_jump_right, True, False)
@@ -559,7 +559,7 @@ while run:
 
 
     if main_menu == True:
-        screen.blit(sign2, (100,-370))
+        screen.blit(sign2, (62,50))
         if exit_button.draw():
             run = False
         if start_button.draw():
@@ -599,7 +599,9 @@ while run:
             webbrowser.open(r"https://forms.gle/91uxK71iz3VmFmdM7")
         #if player died
         if game_over == -1:
-            losing_sound.play(0,0,0)
+            if lose == True:
+                losing_sound.play(0,0,0)
+                lose = False
             if restart_button.draw():
                 player.reset(100, screen_height - 130)
                 blob_group.empty()
@@ -612,6 +614,7 @@ while run:
                 game_over = 0
                 score = 0
                 coin_group.add(score_coin)
+                lose = True
             else:
                 if restart_button.draw():
                     blob_group.empty()
@@ -627,6 +630,9 @@ while run:
         #if player has completed the level
         if game_over == 1 and score == 10:
             level += 1
+            if lose == True:
+                level_done.play()
+                lose = False
             if level <= max_levels:
                 #draw_text("Nice You Completed The Level!", font, blue, (screen_width // 2) - 140, screen_height // 2)
                 world_data = []
@@ -634,14 +640,16 @@ while run:
                 score = 0
                 game_over = 0
                 coin_group.add(score_coin)
-                level_done.play()
+                lose = True
             else:
                 pass
             if exit_button.draw():
                 run = False
         elif game_over == 1 and score < 10:
             draw_text("You Died Of Starvation!", font, blue, (screen_width // 2) - 140, screen_height // 2)
-            losing_sound.play()
+            if lose == True:
+                losing_sound.play(0, 0, 0)
+                lose = False
             if exit_button.draw():
                 run = False
 
