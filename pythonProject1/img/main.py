@@ -30,7 +30,7 @@ main_menu = True
 lose = True
 score = 0
 level = 1
-max_levels = 5
+max_levels = 4
 list1 = [1, -1]
 list2 = [4, -4]
 jump = pygame.mixer.Sound('untitled.wav')
@@ -652,6 +652,29 @@ while run:
                 lose = False
             if exit_button.draw():
                 run = False
+            if restart_button.draw():
+                player.reset(100, screen_height - 130)
+                blob_group.empty()
+                lava_group.empty()
+                exit_group.empty()
+                platform_group.empty()
+                opposum_group.empty()
+                level = 1
+                world = reset_level(level)
+                game_over = 0
+                score = 0
+                coin_group.add(score_coin)
+                lose = True
+            else:
+                if restart_button.draw():
+                    blob_group.empty()
+                    lava_group.empty()
+                    exit_group.empty()
+                    platform_group.empty()
+                    opposum_group.empty()
+                    world = reset_level(level)
+                    score = 0
+                    coin_group.add(score_coin)
 
 
 
